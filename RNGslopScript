@@ -1,0 +1,292 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- wallahi im finished.
+local Window = Rayfield:CreateWindow({
+   Name = "Just a RNG game",
+   Icon = 0,
+   LoadingTitle = "swyk is learning :(",
+   LoadingSubtitle = "boooo",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "SwykScript",
+      FileName = "config"
+   },
+   KeySystem = false
+})
+
+getgenv().farm = false
+getgenv().autostickupgrade = false
+getgenv().autoequip = false
+getgenv().autoRolling = false
+getgenv().autoconsumable = false
+getgenv().autoCrafting = false 
+
+local SelectedGacha = "Novice 100"
+local SelectedCraftItems = {}
+local SelectedCraftAmount = "x1"
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local RootPart = LocalPlayer.Character:WaitForChild("HumanoidRootPart")
+
+local function firePrompt(path)
+    local prompt = path:FindFirstChildOfClass("ProximityPrompt")
+    if prompt then
+        fireproximityprompt(prompt)
+    end
+end
+
+
+local FarmTab = Window:CreateTab("Auto Farm", "zap")
+local RollTab = Window:CreateTab("Rolls", "refresh-cw")
+local CraftingTab = Window:CreateTab("Crafting", "drafting-compass")
+local ExtraTab = Window:CreateTab("Extras", "square-plus")
+
+
+FarmTab:CreateToggle({
+   Name = "Auto Click Farm",
+   CurrentValue = false,
+   Flag = "FarmToggle",
+   Callback = function(Value)
+      getgenv().farm = Value
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Upgrade Current RNG",
+   CurrentValue = false,
+   Flag = "UpgradeToggle",
+   Callback = function(Value)
+      getgenv().autostickupgrade = Value
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Equip Best Item",
+   CurrentValue = false,
+   Flag = "EquipToggle",
+   Callback = function(Value)
+      getgenv().autoequip = Value
+      if Value then autoequip() end
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto Use Lucky Block",
+   CurrentValue = false,
+   Flag = "ConsumableToggle",
+   Callback = function(Value)
+      getgenv().autoconsumable = Value
+   end,
+})
+
+local GachaFolder = workspace:WaitForChild("Containers"):WaitForChild("GachaContainer")
+
+RollTab:CreateDropdown({
+   Name = "Select Gacha Type",
+   Options = {
+      "Novice 100",
+      "Adept 250k",
+      "Elite 5m",
+      "Master 500m"
+   },
+   CurrentOption = {"Novice 100"},
+   MultipleOptions = false,
+   Flag = "GachaSelector",
+   Callback = function(Options)
+      SelectedGacha = Options[1]
+   end,
+})
+
+RollTab:CreateToggle({
+   Name = "Auto Roll Selected",
+   CurrentValue = false,
+   Flag = "AutoRollToggle",
+   Callback = function(Value)
+      getgenv().autoRolling = Value
+      if Value then
+          task.spawn(function()
+              while getgenv().autoRolling do
+                  local prompt = nil
+                  
+local GachaFolder = workspace:WaitForChild("Containers"):WaitForChild("GachaContainer")
+
+local GachaMap = {
+    ["Novice 100"] = "Novice Gacha",
+    ["Adept 250k"] = "Adept Gacha",
+    ["Elite 5m"] = "Elite Gacha",
+    ["Master 500m"] = "Master Gacha"
+}
+local gachaName = GachaMap[SelectedGacha]
+if gachaName then
+    prompt = GachaFolder[gachaName]:FindFirstChildOfClass("ProximityPrompt")
+end
+
+                  if prompt then
+                      fireproximityprompt(prompt)
+                  end
+                  task.wait()
+              end
+          end)
+      end
+   end,
+})
+
+local ItemIDMap = {
+    ["Money bag"] = "mTest2",
+    ["Box"] = "mTest3",
+    ["corrupted harbinger"] = "mTest4",
+    ["Youtube golden button"] = "mTestG",
+    ["god cube"] = "mTest1",
+    ["centeral core"] = "mTest8",
+    ["glitchy"] = "Glitch",
+    ["galaxy"] = "mTest9",
+    ["the rainbow light"] = "m_RainbowLight"
+}
+
+CraftingTab:CreateDropdown({
+   Name = "Auto Craft Items",
+   Options = {"Money bag", "Box", "corrupted harbinger", "Youtube golden button", "god cube", "centeral core", "glitchy", "galaxy", "the rainbow light"},
+   CurrentOption = {},
+   MultipleOptions = true,
+   Flag = "CraftSelector",
+   Callback = function(Options)
+      SelectedCraftItems = Options
+   end,
+})
+
+CraftingTab:CreateDropdown({
+   Name = "Craft Amount",
+   Options = {"x1", "x10", "x100", "x1000", "x10000"},
+   CurrentOption = {"x1"},
+   MultipleOptions = false,
+   Flag = "AmountSelector",
+   Callback = function(Options)
+      SelectedCraftAmount = Options[1]
+   end,
+})
+
+CraftingTab:CreateToggle({
+   Name = "Start",
+   CurrentValue = false,
+   Flag = "AutoCraftToggle",
+   Callback = function(Value)
+      getgenv().autoCrafting = Value
+      if Value then
+          task.spawn(function()
+              local CraftRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CraftRemotes"):WaitForChild("Craft")
+              while getgenv().autoCrafting do
+                  if #SelectedCraftItems > 0 then
+                      for _, itemName in pairs(SelectedCraftItems) do
+                          local internalID = ItemIDMap[itemName]
+                          if internalID then
+                              CraftRemote:FireServer(internalID, SelectedCraftAmount)
+                          end
+                      end
+                  end
+                  task.wait()
+              end
+          end)
+      end
+   end,
+})
+
+ExtraTab:CreateButton({
+   Name = "Anti-AFK",
+   Callback = function()
+      local VU = game:GetService("VirtualUser")
+      LocalPlayer.Idled:Connect(function()
+          VU:CaptureController()
+          VU:ClickButton2(Vector2.new())
+          print("Anti-AFK: Prevented a kick at " .. os.date("%X"))
+      end)
+      Rayfield:Notify({Title = "Anti-AFK", Content = "Anti-AFK is now active!", Duration = 3})
+   end,
+})
+
+ExtraTab:CreateButton({
+   Name = "Open All Areas (Teleport)",
+   Callback = function()
+      local zones = workspace.Containers.LocationZoneContainer:GetChildren()
+      for _, zone in pairs(zones) do
+          if zone:IsA("BasePart") or zone:FindFirstChildOfClass("BasePart") then
+              local targetPos = zone:IsA("BasePart") and zone.CFrame or zone:FindFirstChildOfClass("BasePart").CFrame
+              RootPart.CFrame = targetPos + Vector3.new(0, 3, 0)
+              task.wait(0.5)
+          end
+      end
+   end,
+})
+
+function autoequip()
+    task.spawn(function()
+        while getgenv().autoequip do
+            local inventoryFolder = LocalPlayer:FindFirstChild("InventoryFolder")
+            local inventory = inventoryFolder and inventoryFolder:FindFirstChild("ItemInventoryFolder")
+            local dataFolder = LocalPlayer:FindFirstChild("DataFolder")
+            local equippedItem = dataFolder and dataFolder:FindFirstChild("EquippedItem")
+            local EquipRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ItemRemotes"):WaitForChild("Equip")
+            
+            if inventory and equippedItem then
+                local ItemInfo = require(ReplicatedStorage.Controllers.InformationController.Informations["Information.Item"])
+                local bestItemObject = nil
+                local bestClicks = 0
+                
+                for _, itemValue in pairs(inventory:GetChildren()) do
+                    if itemValue:IsA("NumberValue") and itemValue.Value > 0 then
+                        local itemData = ItemInfo[itemValue.Name]
+                        if itemData and itemData.EarnTable and not itemData.Consumable then
+                            local clicks = tonumber(itemData.EarnTable[2]) or 0
+                            if clicks > bestClicks then
+                                bestClicks = clicks
+                                bestItemObject = itemValue
+                            end
+                        end
+                    end
+                end
+                
+                if bestItemObject and bestItemObject.Name ~= equippedItem.Value then
+                    EquipRemote:FireServer(bestItemObject)
+                end
+            end
+            task.wait(5)
+        end
+    end)
+end
+
+task.spawn(function()
+    while task.wait(5) do
+        if getgenv().autoconsumable then
+            local args = {
+                LocalPlayer:WaitForChild("InventoryFolder"):WaitForChild("ConsumableInventoryFolder"):WaitForChild("\235\159\173\237\130\164\235\184\148\235\159\173"),
+                1
+            }
+            ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ItemRemotes"):WaitForChild("Use"):FireServer(unpack(args))
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if getgenv().farm then
+            ReplicatedStorage.Remotes.ItemRemotes.Click:FireServer()
+        end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.5) do
+        if getgenv().autostickupgrade then
+            local args = { [1] = true }
+            ReplicatedStorage.Remotes.UpgradeRemotes.Upgrade:FireServer(unpack(args))
+        end
+    end
+end)
+
+Rayfield:Notify({
+   Title = "WARNING",
+   Content = "script is still being worked on so dont eat me alive.",
+   Duration = 5,
+   Image = 4483362458,
+})
